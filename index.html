@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gatilho Não — MVP com Firebase</title>
+<style>
+  :root{--bg:#f6f8fb;--card:#fff;--accent:#4a90e2;--danger:#e24a4a;--muted:#6b7280;--radius:12px;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--bg);color:#0f172a}
+  .app{max-width:980px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,#4a90e2,#7bd389);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(12,20,40,0.04);margin-top:14px}
+  label{display:block;margin-bottom:6px;color:var(--muted);font-size:0.9rem}
+  input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #e6edf8;background:#fbfdff}
+  .row{display:flex;gap:8px}
+  .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:white;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(74,144,226,0.14)}
+  .small{font-size:0.85rem;color:var(--muted)}
+  .list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-radius:10px;border:1px solid #eef6ff;background:linear-gradient(180deg,#fff,#fbfdff)}
+  .controls{display:flex;gap:8px}
+  .hidden{display:none}
+  .danger{color:var(--danger);font-weight:700}
+  .top-actions{display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">GN</div>
+    <div>
+      <h1>Gatilho Não — MVP</h1>
+      <div class="small">Autenticação, compartilhamento entre parceiros, modo confidencial e emergência (Firebase)</div>
+    </div>
+  </header>
+
+  <div id="authCard" class="card">
+    <div id="userArea" class="hidden">
+      <div class="small">Conectado como <strong id="userEmail"></strong></div>
+      <div style="margin-top:8px" class="top-actions">
+        <button id="signOutBtn" class="btn ghost">Sair</button>
+        <button id="createRoomBtn" class="btn">Criar convite (parceiro)</button>
+        <button id="joinRoomBtn" class="btn ghost">Entrar com código</button>
+      </div>
+    </div>
+
+    <div id="anonArea">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="googleSignIn" class="btn">Entrar com Google</button>
+        <button id="emailSignIn" class="btn ghost">Entrar com e‑mail</button>
+      </div>
+      <div class="small" style="margin-top:8px">Ao entrar, seus gatilhos serão sincronizados com o Firebase e você poderá compartilhar com um parceiro.</div>
+    </div>
+  </div>
+
+  <!-- Trigger form -->
+  <section class="card" id="mainCard">
+    <h2>Adicionar gatilho</h2>
+    <form id="triggerForm">
+      <label for="type">Tipo</label>
+      <select id="type"><option value="palavra">Palavra</option><option value="atitude">Atitude</option><option value="contexto">Contexto</option></select>
+
+      <label for="text">Palavra / atitude</label>
+      <input id="text" required />
+
+      <div style="display:flex;gap:10px;margin-top:8px;align-items:center">
+        <div style="flex:1">
+          <label for="intensity">Intensidade <span id="intVal">5</span></label>
+          <input id="intensity" type="range" min="1" max="10" value="5" />
+        </div>
+        <div style="width:150px">
+          <label for="visibility">Visibilidade</label>
+          <select id="visibility"><option value="private">Privado</option><option value="partner">Compartilhado com parceiro</option></select>
+        </div>
+      </div>
+
+      <label for="notes" style="margin-top:8px">Notas (opcional)</label>
+      <textarea id="notes"></textarea>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" id="saveBtn">Salvar</button>
+        <button type="button" id="clearBtn" class="btn ghost">Limpar</button>
+        <div style="margin-left:auto" class="small">Modo confidencial: <label><input type="checkbox" id="confidential"> Não falar agora</label></div>
+      </div>
+    </form>
+
+    <div style="margin-top:12px">
+      <button id="exportBtn" class="btn ghost">Exportar (JSON)</button>
+      <button id="importBtn" class="btn ghost">Importar</button>
+      <input id="fileInput" type="file" accept="application/json" class="hidden" />
+      <button id="clearAllBtn" class="btn ghost">Apagar tudo</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <button id="crisisBtn" class="btn" style="background:var(--danger)">Estou em crise</button>
+    </div>
+
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="card">
+    <h3>Relatórios e dicas</h3>
+    <div id="reportArea" class="small">Selecione um gatilho para ver sugestões de abordagem.</div>
+  </section>
+
+</div>
+
+<!-- Firebase v9 modular (CDN) -->
+<script type="module">
+  // ======= CONFIGURE AQUI ========
+  const firebaseConfig = {
+     apiKey: "AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ",
+  authDomain: "gatilhanao.firebaseapp.com",
+  projectId: "gatilhanao",
+  storageBucket: "gatilhanao.firebasestorage.app",
+  messagingSenderId: "989297905655",
+  appId: "1:989297905655:web:2db01ac43befc89f9328f2",
+  measurementId: "G-Q2Q6NYVCQN"
+  };
+  // ===============================
+
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+  import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailLink, sendSignInLinkToEmail, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+  import { getFirestore, collection, doc, setDoc, getDoc, addDoc, query, where, getDocs, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // UI refs
+  const anonArea = document.getElementById('anonArea');
+  const userArea = document.getElementById('userArea');
+  const userEmail = document.getElementById('userEmail');
+  const googleSignIn = document.getElementById('googleSignIn');
+  const emailSignIn = document.getElementById('emailSignIn');
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  const createRoomBtn = document.getElementById('createRoomBtn');
+  const joinRoomBtn = document.getElementById('joinRoomBtn');
+
+  const form = document.getElementById('triggerForm');
+  const listEl = document.getElementById('list');
+  const intensity = document.getElementById('intensity');
+  const intVal = document.getElementById('intVal');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const fileInput = document.getElementById('fileInput');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const crisisBtn = document.getElementById('crisisBtn');
+  const reportArea = document.getElementById('reportArea');
+
+  let currentUser = null;
+  let unsubscribeTriggers = null;
+  let currentRoomId = null; // when sharing with partner
+
+  // --- Auth state listener ---
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+    if(user){
+      anonArea.classList.add('hidden'); userArea.classList.remove('hidden'); userEmail.textContent = user.email || user.uid;
+      startListeningTriggers();
+    } else {
+      anonArea.classList.remove('hidden'); userArea.classList.add('hidden'); stopListeningTriggers();
+    }
+  });
+
+  // --- Sign in with Google ---
+  googleSignIn.addEventListener('click', async ()=>{
+    const provider = new GoogleAuthProvider();
+    try{ await signInWithPopup(auth, provider); }catch(e){alert('Erro: '+e.message)}
+  });
+
+  // --- Simple email flow (register or login) ---
+  emailSignIn.addEventListener('click', async ()=>{
+    const email = prompt('Digite seu e-mail'); if(!email) return;
+    // try sign-in with passwordless link (example)
+    try{
+      const actionCodeSettings = {url: window.location.href, handleCodeInApp: true};
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      alert('Link enviado para ' + email + '. Abra no mesmo dispositivo para entrar.');
+    }catch(e){ alert('Falha: '+e.message); }
+  });
+
+  signOutBtn.addEventListener('click', ()=>signOut(auth));
+
+  // --- Create / Join room (invite code) ---
+  createRoomBtn.addEventListener('click', async ()=>{
+    if(!currentUser) return alert('Faça login antes');
+    // create a room doc, short id
+    const roomRef = await addDoc(collection(db,'rooms'),{owner:currentUser.uid,members:[currentUser.uid],createdAt:serverTimestamp()});
+    // share the generated id as code
+    const code = roomRef.id;
+    prompt('Copie e envie este código ao parceiro (use para entrar):', code);
+  });
+
+  joinRoomBtn.addEventListener('click', async ()=>{
+    if(!currentUser) return alert('Faça login antes');
+    const code = prompt('Cole o código que recebeu do parceiro'); if(!code) return;
+    try{
+      const roomRef = doc(db,'rooms',code);
+      const snap = await getDoc(roomRef);
+      if(!snap.exists()) return alert('Código inválido');
+      const data = snap.data();
+      // add user to members if not present
+      if(!data.members.includes(currentUser.uid)){
+        await updateDoc(roomRef,{members:[...data.members,currentUser.uid]});
+      }
+      currentRoomId = code;
+      alert('Entrou na sala. Agora vocês podem marcar gatilhos como "Compartilhado" e ambos verão.');
+      startListeningTriggers();
+    }catch(e){alert('Erro: '+e.message)}
+  });
+
+  // --- Triggers CRUD (Firestore) ---
+  async function startListeningTriggers(){
+    if(unsubscribeTriggers) unsubscribeTriggers();
+    // listen to triggers owned by user OR triggers that belong to room(s) the user is member of
+    // simple approach: query triggers where owner == uid OR roomId == currentRoomId
+    const q1 = query(collection(db,'triggers'), where('owner','==', currentUser.uid));
+    unsubscribeTriggers = onSnapshot(q1, snap => {
+      const items = [];
+      snap.forEach(d => items.push({id:d.id,...d.data()}));
+      // if joined room, also fetch room triggers
+      if(currentRoomId){
+        // fetch room triggers separately
+        getDocs(query(collection(db,'triggers'), where('roomId','==',currentRoomId))).then(s2=>{
+          s2.forEach(d=>items.push({id:d.id,...d.data()}));
+          renderList(items);
+        });
+      } else {
+        renderList(items);
+      }
+    });
+  }
+  function stopListeningTriggers(){ if(unsubscribeTriggers) { unsubscribeTriggers(); unsubscribeTriggers = null; listEl.innerHTML = ''; } }
+
+  function renderList(items){
+    listEl.innerHTML = '';
+    if(items.length===0) return listEl.innerHTML = '<div class="small">Nenhum gatilho salvo.</div>';
+    // sort by createdAt desc
+    items.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    items.forEach(it=>{
+      const div = document.createElement('div'); div.className='item';
+      div.innerHTML = `<div style="flex:1"><div style="font-weight:700">${escapeHtml(it.text)}</div><div class="small">${it.type} · ${it.visibility || 'private'} · ${it.confidential? 'confidencial' : ''}</div><div class="small">${it.notes||''}</div></div><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><div class="small">${it.intensity}</div><div class="controls"><button data-id="${it.id}" class="btn ghost edit">Editar</button><button data-id="${it.id}" class="btn ghost remove">Excluir</button></div></div>`;
+      listEl.appendChild(div);
+    });
+    // attach handlers
+    listEl.querySelectorAll('.remove').forEach(b=>b.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id; if(!confirm('Excluir?')) return; await deleteDoc(doc(db,'triggers',id));
+    }));
+    listEl.querySelectorAll('.edit').forEach(b=>b.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id; const snap = await getDoc(doc(db,'triggers',id)); const data = snap.data();
+      document.getElementById('type').value = data.type; document.getElementById('text').value = data.text; document.getElementById('intensity').value = data.intensity; intVal.textContent = data.intensity; document.getElementById('visibility').value = data.visibility; document.getElementById('notes').value = data.notes||'';
+      form.dataset.editId = id; document.getElementById('saveBtn').textContent = 'Atualizar';
+    }));
+  }
+
+  // save form
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    if(!currentUser) return alert('Entre para salvar');
+    const t = { type:document.getElementById('type').value, text:document.getElementById('text').value.trim(), intensity:document.getElementById('intensity').value, visibility:document.getElementById('visibility').value, notes:document.getElementById('notes').value.trim(), confidential:document.getElementById('confidential').checked, owner:currentUser.uid, updatedAt:serverTimestamp() };
+    if(form.dataset.editId){ // update
+      const id = form.dataset.editId; const ref = doc(db,'triggers',id); await updateDoc(ref, t); delete form.dataset.editId; document.getElementById('saveBtn').textContent='Salvar';
+    } else {
+      // if visibility is partner, add roomId if present
+      if(t.visibility === 'partner' && currentRoomId) t.roomId = currentRoomId;
+      t.createdAt = serverTimestamp();
+      await addDoc(collection(db,'triggers'), t);
+    }
+    form.reset(); intVal.textContent='5';
+  });
+
+  intensity.addEventListener('input', (e)=> intVal.textContent = e.target.value);
+
+  // export/import
+  exportBtn.addEventListener('click', async ()=>{
+    if(!currentUser) return alert('Entre para exportar');
+    // fetch all user triggers
+    const snaps = await getDocs(query(collection(db,'triggers'), where('owner','==',currentUser.uid)));
+    const arr = snaps.docs.map(d=> ({id:d.id,...d.data()}));
+    const blob = new Blob([JSON.stringify(arr,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='gatilhos_'+(new Date()).toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  });
+  importBtn.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return; const txt = await f.text(); try{ const imported = JSON.parse(txt); for(const it of imported){ delete it.id; it.owner = currentUser.uid; await addDoc(collection(db,'triggers'), it); } alert('Importado'); }catch(e){alert('Falha:'+e.message)} finally{fileInput.value=''}
+  });
+
+  clearAllBtn.addEventListener('click', async ()=>{
+    if(!confirm('Apagar todos os seus gatilhos no servidor?')) return;
+    // careful: Firestore doesn't support mass delete easily in client; we fetch and delete
+    const snaps = await getDocs(query(collection(db,'triggers'), where('owner','==',currentUser.uid)));
+    for(const d of snaps.docs) await deleteDoc(doc(db,'triggers',d.id));
+    alert('Concluído');
+  });
+
+  // crisis button: simple modal / steps
+  crisisBtn.addEventListener('click', ()=>{
+    alert('Se estiver em crise: 1) Respire profundamente 2) Procure um amigo ou profissional 3) Contato de emergência: ligue 188 (CVV) ou 190/192 se for risco imediato.');
+  });
+
+  // small helper: suggestions based on intensity / type
+  function suggestionFor(trigger){
+    const base = [];
+    if(trigger.intensity >= 8) base.push('Valide a emoção antes de tentar explicar: "Vejo que isso te toca profundamente"');
+    if(trigger.type === 'palavra') base.push('Evite repetir a palavra; ofereça alternativas calmas: "Podemos falar sobre isso depois?"');
+    if(trigger.confidential) base.push('Respeite o espaço: pergunte quando a pessoa estiver pronta.');
+    if(trigger.intensity <=3) base.push('Lembrete leve: respire junto com a pessoa e confirme se quer conversar.');
+    return base;
+  }
+  // clicking list items shows suggestions
+  listEl.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('.item'); if(!btn) return; const id = e.target.closest('.controls')?.querySelector('.edit')?.dataset.id || null; // best-effort
+    // fallback: if click inside item, parse title
+    const text = e.target.closest('.item')?.querySelector('div')?.innerText || '';
+    reportArea.textContent = 'Sugestões: selecione editar para carregar o gatilho e ver dicas.';
+  });
+
+  // helper: escape
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // Firestore security rules (suggestion):
+  /*
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /triggers/{triggerId} {
+        allow read: if request.auth != null && (resource.data.owner == request.auth.uid || (resource.data.roomId != null && exists(/databases/$(database)/documents/rooms/$(resource.data.roomId)) && request.auth.uid in get(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.members));
+        allow create: if request.auth != null && request.resource.data.owner == request.auth.uid;
+        allow update, delete: if request.auth != null && resource.data.owner == request.auth.uid;
+      }
+      match /rooms/{roomId} {
+        allow read, create: if request.auth != null;
+        allow update: if request.auth != null && (request.auth.uid in resource.data.members);
+      }
+    }
+  }
+  */
+
+  // Note: replace firebaseConfig with your project's values. Enable Authentication providers (Google + Email link) and Firestore in console.
+
+</script>
+</body>
+</html>
