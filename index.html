@@ -54,33 +54,23 @@
         <option value="dark">Escuro</option>
         <option value="romantic">Romântico</option>
       </select>
-      <button id="signinBtn" class="btn ghost">Entrar</button>
     </div>
   </header>
 
   <main class="layout">
     <section class="card">
       <div id="authArea">
+        <h3>Acesso</h3>
         <div id="anon" class="row" style="align-items:center">
           <button id="googleSignIn" class="btn">Entrar com Google</button>
-          <button id="emailSignIn" class="btn ghost">Entrar por e‑mail</button>
         </div>
         <div id="userInfo" class="hidden">
           <div class="small">Conectado como <strong id="userLabel"></strong></div>
           <div style="margin-top:8px" class="top-controls">
             <button id="signOut" class="btn ghost">Sair</button>
-            <button id="createInvite" class="btn">Gerar código</button>
-            <button id="enterInvite" class="btn ghost">Entrar com código</button>
           </div>
-          <div style="margin-top:8px"><span class="small">Código atual: </span><strong id="currentCode">—</strong></div>
+          <div style="margin-top:8px"><span class="small">Código da sala atual: </span><strong id="currentCode">—</strong></div>
         </div>
-      </div>
-
-      <hr style="margin:12px 0">
-
-      <div>
-        <h3>Modo confidencial</h3>
-        <label class="small">Marque para indicar que esse gatilho deve ser tratado somente em terapia</label>
       </div>
     </section>
 
@@ -124,20 +114,19 @@
 
       <div style="display:grid;grid-template-columns:1fr 260px;gap:12px;align-items:start">
         <div>
-          <h3>Lista de gatilhos</h3>
+          <h3>Lista de gatilhos (Seus e do Parceiro)</h3>
           <div id="list" class="list"></div>
         </div>
         <div>
           <h3>Relatórios & Dicas</h3>
           <div class="card" id="summaryCard" style="padding:10px">
-            <div class="small" id="summaryText">Selecione um gatilho para ver sugestões.</div>
             <div style="margin-top:10px">
               <div class="small">Distribuição por intensidade</div>
               <div id="intChart" class="chart">—</div>
             </div>
             <div style="margin-top:10px">
               <div class="small">Gatilhos mais frequentes</div>
-              <div id="freqList" class="small">—</div>
+              <div id="freqList" class="small" style="display:flex; flex-direction:column; gap: 4px;">—</div>
             </div>
           </div>
         </div>
@@ -151,7 +140,6 @@
       <div style="margin-top:8px;display:flex;gap:8px">
         <button id="genCode" class="btn">Gerar código</button>
         <button id="pasteCode" class="btn ghost">Inserir código</button>
-        <button id="partnerTriggers" class="btn ghost">Gatilhos do Parceiro</button>
       </div>
       <div style="margin-top:8px" class="small">Código: <strong id="inviteCode">—</strong></div>
       <div style="margin-top:12px">
@@ -163,8 +151,9 @@
 </div>
 
 <script type="module">
+  // Cole aqui a configuração do seu projeto Firebase
   const firebaseConfig = {
-    apiKey: "AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ",
+  apiKey: "AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ",
   authDomain: "gatilhanao.firebaseapp.com",
   projectId: "gatilhanao",
   storageBucket: "gatilhanao.firebasestorage.app",
@@ -181,22 +170,19 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // UI refs
+  // --- UI refs ---
   const themeSelect = document.getElementById('themeSelect');
   const googleSignIn = document.getElementById('googleSignIn');
-  const emailSignIn = document.getElementById('emailSignIn');
   const anon = document.getElementById('anon');
   const userInfo = document.getElementById('userInfo');
   const userLabel = document.getElementById('userLabel');
   const signOutBtn = document.getElementById('signOut');
-  const createInvite = document.getElementById('createInvite');
-  const enterInvite = document.getElementById('enterInvite');
+  const currentCodeEl = document.getElementById('currentCode');
 
   const form = document.getElementById('form');
   const listEl = document.getElementById('list');
   const intensity = document.getElementById('intensity');
   const intLabel = document.getElementById('intLabel');
-  const summaryText = document.getElementById('summaryText');
   const intChart = document.getElementById('intChart');
   const freqList = document.getElementById('freqList');
 
@@ -204,160 +190,371 @@
   const pasteCode = document.getElementById('pasteCode');
   const inviteCodeEl = document.getElementById('inviteCode');
   const membersList = document.getElementById('membersList');
-
+  
   const fileInput = document.getElementById('fileInput');
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
 
+  // --- State ---
   let currentUser = null;
   let currentRoom = null;
-  let unsubscribe = null;
+  let unsubscribeUser = null;
+  let unsubscribePartner = null;
+  let userTriggers = [];
+  let partnerTriggers = [];
 
-  // Theme handling
-  themeSelect.addEventListener('change', ()=>{ document.body.setAttribute('data-theme', themeSelect.value); });
+  // --- Theme ---
+  themeSelect.addEventListener('change', () => { document.body.setAttribute('data-theme', themeSelect.value); });
 
-  // --- Auth (Google simple flow) ---
-  googleSignIn.addEventListener('click', async ()=>{
+  // --- Auth ---
+  googleSignIn.addEventListener('click', async () => {
     const provider = new GoogleAuthProvider();
-    try{ await signInWithPopup(auth, provider); }catch(e){ alert('Erro: '+e.message); }
+    try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); alert('Erro ao entrar: ' + e.message); }
   });
 
-  onAuthStateChanged(auth, user=>{
+  onAuthStateChanged(auth, async user => {
     currentUser = user;
-    if(user){ anon.classList.add('hidden'); userInfo.classList.remove('hidden'); userLabel.textContent = user.email || user.uid; }
-    else { anon.classList.remove('hidden'); userInfo.classList.add('hidden'); }
-    startListener();
-  });
-
-  signOutBtn.addEventListener('click', ()=>signOut(auth));
-
-  // --- Create / join room ---
-  genCode.addEventListener('click', async ()=>{
-    if(!currentUser) return alert('Entre primeiro');
-    // create room doc
-    const r = await addDoc(collection(db,'rooms'),{owner:currentUser.uid,members:[currentUser.uid],createdAt:serverTimestamp()});
-    currentRoom = r.id; inviteCodeEl.textContent = currentRoom; // show code
-    // store user's active room for convenience
-    await setDoc(doc(db,'users',currentUser.uid),{activeRoom:currentRoom, email:currentUser.email},{merge:true});
-    updateMembers(); startListener();
-  });
-
-  pasteCode.addEventListener('click', async ()=>{
-    const code = prompt('Cole o código recebido do parceiro'); if(!code) return;
-    // join room
-    const ref = doc(db,'rooms',code); const snap = await getDoc(ref);
-    if(!snap.exists()){ alert('Código inválido'); return; }
-    const data = snap.data(); if(!data.members.includes(currentUser.uid)){
-      await updateDoc(ref,{members:[...data.members,currentUser.uid]});
+    if (user) {
+      anon.classList.add('hidden');
+      userInfo.classList.remove('hidden');
+      userLabel.textContent = user.email || user.displayName || user.uid;
+      // Check if user has an active room
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists() && userDoc.data().activeRoom) {
+        currentRoom = userDoc.data().activeRoom;
+        inviteCodeEl.textContent = currentRoom;
+        currentCodeEl.textContent = currentRoom;
+      }
+    } else {
+      anon.classList.remove('hidden');
+      userInfo.classList.add('hidden');
+      currentRoom = null;
+      userTriggers = [];
+      partnerTriggers = [];
     }
-    currentRoom = code; inviteCodeEl.textContent = currentRoom; await setDoc(doc(db,'users',currentUser.uid),{activeRoom:currentRoom, email:currentUser.email},{merge:true}); updateMembers(); startListener();
-    alert('Entrou na sala. Gatilhos compartilhados serão visíveis.');
+    startListeners();
   });
 
-  async function updateMembers(){ if(!currentRoom) return; const snap = await getDoc(doc(db,'rooms',currentRoom)); if(!snap.exists()) return; const m = snap.data().members||[]; membersList.textContent = m.join(', '); }
+  signOutBtn.addEventListener('click', () => signOut(auth));
 
-  // --- Listen triggers: own OR room triggers ---
-  function startListener(){ if(unsubscribe) { unsubscribe(); unsubscribe = null; }
-    if(!currentUser) { listEl.innerHTML = '<div class="small">Faça login para ver seus gatilhos.</div>'; return; }
-    // listen to user's triggers
-    const qUser = query(collection(db,'triggers'), where('owner','==', currentUser.uid));
-    unsubscribe = onSnapshot(qUser, snap=>{
-      const items = [];
-      snap.forEach(d=> items.push({id:d.id,...d.data()}));
-      // if in room, fetch room triggers too
-      if(currentRoom){ getDocs(query(collection(db,'triggers'), where('roomId','==', currentRoom))).then(s2=>{ s2.forEach(d=> items.push({id:d.id,...d.data()})); render(items); }); }
-      else render(items);
+  // --- Partnership / Rooms ---
+  genCode.addEventListener('click', async () => {
+    if (!currentUser) return alert('Você precisa entrar primeiro.');
+    try {
+      const roomRef = await addDoc(collection(db, 'rooms'), { owner: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp() });
+      currentRoom = roomRef.id;
+      inviteCodeEl.textContent = currentRoom;
+      currentCodeEl.textContent = currentRoom;
+      await setDoc(doc(db, 'users', currentUser.uid), { activeRoom: currentRoom, email: currentUser.email }, { merge: true });
+      startListeners();
+    } catch (e) { console.error(e); alert('Erro ao criar sala: ' + e.message); }
+  });
+
+  pasteCode.addEventListener('click', async () => {
+    if (!currentUser) return alert('Você precisa entrar primeiro.');
+    const code = prompt('Cole o código recebido do parceiro');
+    if (!code) return;
+
+    try {
+      const roomRef = doc(db, 'rooms', code);
+      const roomSnap = await getDoc(roomRef);
+      if (!roomSnap.exists()) {
+        alert('Código inválido ou sala não encontrada.');
+        return;
+      }
+      const data = roomSnap.data();
+      if (!data.members.includes(currentUser.uid)) {
+        await updateDoc(roomRef, { members: [...data.members, currentUser.uid] });
+      }
+      currentRoom = code;
+      inviteCodeEl.textContent = currentRoom;
+      currentCodeEl.textContent = currentRoom;
+      await setDoc(doc(db, 'users', currentUser.uid), { activeRoom: currentRoom, email: currentUser.email }, { merge: true });
+      startListeners();
+      alert('Entrou na sala. Gatilhos compartilhados agora serão visíveis.');
+    } catch (error) {
+      console.error("Erro ao entrar na sala:", error);
+      alert(`Não foi possível entrar na sala: ${error.message}`);
+    }
+  });
+
+  async function updateMembers() {
+    if (!currentRoom) {
+        membersList.textContent = '—';
+        return;
+    }
+    const roomSnap = await getDoc(doc(db, 'rooms', currentRoom));
+    if (!roomSnap.exists()) return;
+    const members = roomSnap.data().members || [];
+    
+    // Fetch user details for richer display if desired, for now just UIDs
+    membersList.textContent = members.map(uid => uid === currentUser.uid ? 'Você' : 'Parceiro').join(', ');
+  }
+
+  // --- Real-time Listeners ---
+  function startListeners() {
+    if (unsubscribeUser) unsubscribeUser();
+    if (unsubscribePartner) unsubscribePartner();
+    userTriggers = [];
+    partnerTriggers = [];
+
+    if (!currentUser) {
+      listEl.innerHTML = '<div class="small">Faça login para ver seus gatilhos.</div>';
+      renderAllTriggers();
+      return;
+    }
+
+    // Listener for user's own triggers
+    const qUser = query(collection(db, 'triggers'), where('owner', '==', currentUser.uid));
+    unsubscribeUser = onSnapshot(qUser, snap => {
+      userTriggers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAllTriggers();
     });
+
+    // Listener for partner's shared triggers
+    if (currentRoom) {
+      const qPartner = query(collection(db, 'triggers'), where('roomId', '==', currentRoom), where('owner', '!=', currentUser.uid));
+      unsubscribePartner = onSnapshot(qPartner, snap => {
+        partnerTriggers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderAllTriggers();
+      });
+    }
     updateMembers();
   }
+  
+  function renderAllTriggers() {
+    const allItems = [...userTriggers, ...partnerTriggers];
+    render(allItems);
+  }
 
-  function render(items){
+  // --- Rendering ---
+  function render(items) {
     listEl.innerHTML = '';
-    if(items.length===0) return listEl.innerHTML = '<div class="small">Nenhum gatilho salvo.</div>';
-    // sort by createdAt (best-effort)
-    items.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
-    items.forEach(it=>{
-      const div = document.createElement('div'); div.className='item';
-      const barPct = Math.min(100, (it.intensity||5) * 10);
-      div.innerHTML = `<div style="flex:1"><div style="font-weight:700">${escape(it.text)}</div><div class="meta">${escape(it.type)} · ${it.visibility||'private'} ${it.confidential? '· confidencial':''}</div><div class="meta">${escape(it.notes||'')}</div><div style="margin-top:6px" class="int-bar"><div class="int-fill" style="width:${barPct}%;background:linear-gradient(90deg,#7bd389,#ffb86b);"></div></div></div><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end"><div class="meta">${it.intensity}</div><div class="controls"><button class="btn ghost editBtn" data-id="${it.id}">Editar</button><button class="btn ghost delBtn" data-id="${it.id}">Excluir</button></div></div>`;
+    if (items.length === 0) {
+      listEl.innerHTML = '<div class="small">Nenhum gatilho salvo.</div>';
+      computeSummary([]);
+      return;
+    }
+    
+    items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    
+    items.forEach(it => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      const barPct = Math.min(100, (it.intensity || 5) * 10);
+      const isOwner = it.owner === currentUser.uid;
+
+      div.innerHTML = `
+        <div style="flex:1">
+          <div style="font-weight:700">${escape(it.text)} ${!isOwner ? '<span>(Parceiro)</span>' : ''}</div>
+          <div class="meta">${escape(it.type)} · ${it.visibility || 'private'} ${it.confidential ? '· confidencial' : ''}</div>
+          <div class="meta">${escape(it.notes || '')}</div>
+          <div style="margin-top:6px" class="int-bar">
+            <div class="int-fill" style="width:${barPct}%;background:linear-gradient(90deg, #7bd389, #ffb86b, #e24a4a);"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <div class="meta">${it.intensity}</div>
+          ${isOwner ? `<div class="controls"><button class="btn ghost editBtn" data-id="${it.id}">Editar</button><button class="btn ghost delBtn" data-id="${it.id}">Excluir</button></div>` : '<div class="small">Somente leitura</div>'}
+        </div>`;
       listEl.appendChild(div);
     });
-    attachListHandlers(); computeSummary(items);
+
+    attachListHandlers();
+    computeSummary(items);
   }
 
-  function attachListHandlers(){
-    listEl.querySelectorAll('.delBtn').forEach(b=>b.addEventListener('click', async (e)=>{
-      const id = e.target.dataset.id; if(!confirm('Excluir?')) return; await deleteDoc(doc(db,'triggers',id));
+  function attachListHandlers() {
+    listEl.querySelectorAll('.delBtn').forEach(b => b.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id;
+      if (!confirm('Tem certeza que deseja excluir este gatilho?')) return;
+      try { await deleteDoc(doc(db, 'triggers', id)); } catch(err) { alert("Erro ao excluir.")}
     }));
-    listEl.querySelectorAll('.editBtn').forEach(b=>b.addEventListener('click', async (e)=>{
-      const id = e.target.dataset.id; const snap = await getDoc(doc(db,'triggers',id)); const d = snap.data(); document.getElementById('type').value = d.type; document.getElementById('text').value = d.text; document.getElementById('intensity').value = d.intensity; intLabel.textContent = d.intensity; document.getElementById('visibility').value = d.visibility; document.getElementById('notes').value = d.notes||''; document.getElementById('confidential').checked = !!d.confidential; form.dataset.editId = id; document.getElementById('saveBtn').textContent = 'Atualizar';
+
+    listEl.querySelectorAll('.editBtn').forEach(b => b.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id;
+      const snap = await getDoc(doc(db, 'triggers', id));
+      if (!snap.exists()) return;
+      const d = snap.data();
+      form.type.value = d.type;
+      form.text.value = d.text;
+      form.intensity.value = d.intensity;
+      intLabel.textContent = d.intensity;
+      form.visibility.value = d.visibility;
+      form.notes.value = d.notes || '';
+      form.confidential.checked = !!d.confidential;
+      form.dataset.editId = id;
+      form.querySelector('#saveBtn').textContent = 'Atualizar';
     }));
   }
 
-  function computeSummary(items){
-    // intensity distribution
-    const buckets = [0,0,0]; // low 1-3 mid 4-7 high 8-10
+  function computeSummary(items) {
+    if (items.length === 0) {
+        intChart.innerHTML = '—';
+        freqList.innerHTML = '—';
+        return;
+    }
+    
+    const buckets = [0, 0, 0]; // baixo 1-3, médio 4-7, alto 8-10
     const freq = {};
-    items.forEach(it=>{
-      const i = Number(it.intensity)||5; if(i<=3) buckets[0]++; else if(i<=7) buckets[1]++; else buckets[2]++;
-      freq[it.text] = (freq[it.text]||0)+1;
+    items.forEach(it => {
+        const i = Number(it.intensity) || 5;
+        if (i <= 3) buckets[0]++;
+        else if (i <= 7) buckets[1]++;
+        else buckets[2]++;
+        const textKey = it.text.toLowerCase().trim();
+        freq[textKey] = (freq[textKey] || 0) + 1;
     });
-    intChart.innerHTML = `<svg width="220" height="140" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg"><g transform="translate(10,10)"><rect x="0" y="0" width="60" height="120" fill="#7bd389" opacity="0.6"/></g></svg>`;
-    // simple freq list
-    const top = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>`${x[0]} (${x[1]})`).join('');
-    freqList.textContent = top || '—';
+    
+    const total = items.length;
+    const heights = buckets.map(b => Math.max(5, (b / total) * 100)); // Altura em px, com mínimo de 5px para visibilidade
+    
+    intChart.innerHTML = `
+        <svg width="100%" height="120" viewBox="0 0 150 120" style="display: flex; align-items: flex-end; gap: 5px;">
+            <g>
+                <rect x="10" y="${100 - heights[0]}" width="40" height="${heights[0]}" fill="#7bd389" rx="4"/>
+                <text x="30" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Baixa (${buckets[0]})</text>
+            </g>
+            <g>
+                <rect x="55" y="${100 - heights[1]}" width="40" height="${heights[1]}" fill="#ffb86b" rx="4"/>
+                <text x="75" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Média (${buckets[1]})</text>
+            </g>
+            <g>
+                <rect x="100" y="${100 - heights[2]}" width="40" height="${heights[2]}" fill="#e24a4a" rx="4"/>
+                <text x="120" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Alta (${buckets[2]})</text>
+            </g>
+        </svg>
+    `;
+
+    const top = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(x => `<div>- ${escape(x[0])} (${x[1]}x)</div>`)
+        .join('');
+        
+    freqList.innerHTML = top || '—';
   }
 
-  // --- Form submit: create or update ---
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault(); if(!currentUser) return alert('Faça login para salvar');
+
+  // --- Form Logic ---
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return alert('Faça login para salvar.');
+
     const payload = {
-      type:document.getElementById('type').value,
-      text:document.getElementById('text').value.trim(),
-      intensity:document.getElementById('intensity').value,
-      visibility:document.getElementById('visibility').value,
-      notes:document.getElementById('notes').value.trim(),
-      confidential:document.getElementById('confidential').checked,
-      owner:currentUser.uid,
-      updatedAt:serverTimestamp()
+      type: form.type.value,
+      text: form.text.value.trim(),
+      intensity: form.intensity.value,
+      visibility: form.visibility.value,
+      notes: form.notes.value.trim(),
+      confidential: form.confidential.checked,
+      owner: currentUser.uid,
+      updatedAt: serverTimestamp()
     };
-    if(form.dataset.editId){ await updateDoc(doc(db,'triggers',form.dataset.editId), payload); delete form.dataset.editId; document.getElementById('saveBtn').textContent='Salvar'; form.reset(); }
-    else { if(payload.visibility==='partner' && currentRoom) payload.roomId = currentRoom; payload.createdAt = serverTimestamp(); await addDoc(collection(db,'triggers'), payload); form.reset(); }
+    
+    const editId = form.dataset.editId;
+    try {
+        if (editId) {
+            await updateDoc(doc(db, 'triggers', editId), payload);
+            delete form.dataset.editId;
+            form.querySelector('#saveBtn').textContent = 'Salvar';
+        } else {
+            if (payload.visibility === 'partner' && currentRoom) {
+                payload.roomId = currentRoom;
+            }
+            payload.createdAt = serverTimestamp();
+            await addDoc(collection(db, 'triggers'), payload);
+        }
+        form.reset();
+        intLabel.textContent = '5'; // Reset label
+    } catch(err) {
+        console.error("Erro ao salvar:", err);
+        alert("Não foi possível salvar o gatilho. Tente novamente.");
+    }
   });
 
-  intensity.addEventListener('input', ()=> intLabel.textContent = document.getElementById('intensity').value);
-
-  // export / import
-  exportBtn.addEventListener('click', async ()=>{
-    if(!currentUser) return alert('Entre para exportar'); const snaps = await getDocs(query(collection(db,'triggers'), where('owner','==', currentUser.uid))); const arr = snaps.docs.map(d=>({id:d.id,...d.data()})); const blob = new Blob([JSON.stringify(arr,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='gatilhos_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    form.reset();
+    delete form.dataset.editId;
+    form.querySelector('#saveBtn').textContent = 'Salvar';
+    intLabel.textContent = '5';
   });
-  importBtn.addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', async (e)=>{ const f=e.target.files[0]; if(!f) return; const txt = await f.text(); try{ const imported = JSON.parse(txt); for(const it of imported){ delete it.id; it.owner = currentUser.uid; await addDoc(collection(db,'triggers'), it); } alert('Importado'); }catch(e){alert('Falha:'+e.message)} finally{fileInput.value=''} });
 
-  // crisis button
-  document.getElementById('crisisBtn').addEventListener('click', ()=> alert('Se estiver em crise: respire, procure alguém de confiança, ligue 188 (CVV) ou 190/192 se houver risco imediato.'));
+  intensity.addEventListener('input', () => { intLabel.textContent = intensity.value; });
 
-  // helper
-  function escape(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // --- Import / Export ---
+  exportBtn.addEventListener('click', async () => {
+    if (!currentUser) return alert('Entre para exportar.');
+    const snaps = await getDocs(query(collection(db, 'triggers'), where('owner', '==', currentUser.uid)));
+    const arr = snaps.docs.map(d => {
+        const data = d.data();
+        // Firebase Timestamps não são serializáveis para JSON diretamente
+        delete data.createdAt;
+        delete data.updatedAt;
+        return data;
+    });
+    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `gatilhos_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 
-  // lightweight security rules suggestion (cole no console do Firebase):
+  importBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const txt = await f.text();
+    try {
+      const imported = JSON.parse(txt);
+      if(!Array.isArray(imported)) throw new Error("O arquivo JSON deve conter um array de gatilhos.");
+
+      for (const it of imported) {
+        delete it.id;
+        it.owner = currentUser.uid;
+        await addDoc(collection(db, 'triggers'), it);
+      }
+      alert(`Importado com sucesso!`);
+    } catch (e) {
+      alert('Falha na importação: ' + e.message);
+    } finally {
+      fileInput.value = '';
+    }
+  });
+
+  // --- Crisis Button ---
+  document.getElementById('crisisBtn').addEventListener('click', () => alert('Se estiver em crise: respire fundo, procure alguém de confiança ou um local seguro. Ligue para 188 (CVV - Centro de Valorização da Vida) para conversar. Em caso de risco imediato, ligue para 190 (Polícia) ou 192 (SAMU).'));
+
+  // --- Helper ---
+  function escape(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  // --- Firestore Security Rules Suggestion (copy to Firebase console) ---
   /*
   rules_version = '2';
   service cloud.firestore {
     match /databases/{database}/documents {
-      match /triggers/{id} {
-        allow read: if request.auth != null && (resource.data.owner == request.auth.uid || (resource.data.roomId != null && exists(/databases/$(database)/documents/rooms/$(resource.data.roomId)) && request.auth.uid in get(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.members));
+      match /triggers/{triggerId} {
+        // Allow read if user is owner OR if trigger is in a room and user is a member of that room
+        allow read: if request.auth != null && 
+                    (resource.data.owner == request.auth.uid || 
+                    (resource.data.roomId != null && get(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.members[request.auth.uid] == true));
+        // Allow create only if the owner field matches the user's UID
         allow create: if request.auth != null && request.resource.data.owner == request.auth.uid;
+        // Allow update/delete only if user is the original owner
         allow update, delete: if request.auth != null && resource.data.owner == request.auth.uid;
       }
-      match /rooms/{roomId} { allow read, create: if request.auth != null; allow update: if request.auth != null && (request.auth.uid in resource.data.members); }
-      match /users/{userId} { allow read, write: if request.auth != null && request.auth.uid == userId; }
+      match /rooms/{roomId} {
+        allow read, create: if request.auth != null;
+        // Only the room owner can update the room (e.g., add new members)
+        allow update: if request.auth != null && resource.data.owner == request.auth.uid;
+      }
+      match /users/{userId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
   }
   */
-
-  // Nota: Troque firebaseConfig pelos valores do seu projeto e autorize domínios (localhost) em Authentication -> Domains.
-
 </script>
 </body>
 </html>
