@@ -36,7 +36,6 @@
   .danger{color:var(--danger);font-weight:700}
   .top-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .hidden{display:none}
-  /* small chart box */
   .chart{height:160px;border-radius:8px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center}
 </style>
 </head>
@@ -60,7 +59,6 @@
   </header>
 
   <main class="layout">
-    <!-- left column: auth + invite -->
     <section class="card">
       <div id="authArea">
         <div id="anon" class="row" style="align-items:center">
@@ -86,7 +84,6 @@
       </div>
     </section>
 
-    <!-- center: form + list + analytics combined (A + B together) -->
     <section class="card" style="display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
         <h2 style="margin:0">Adicionar gatilho</h2>
@@ -148,13 +145,13 @@
 
     </section>
 
-    <!-- right column: partner panel -->
     <aside class="card">
       <h3>Painel de parceria</h3>
       <div class="small">Crie um código de sala e envie ao parceiro. Se o parceiro entrar com o código, gatilhos com visibilidade 'Compartilhado' aparecem para ambos.</div>
       <div style="margin-top:8px;display:flex;gap:8px">
         <button id="genCode" class="btn">Gerar código</button>
         <button id="pasteCode" class="btn ghost">Inserir código</button>
+        <button id="partnerTriggers" class="btn ghost">Gatilhos do Parceiro</button>
       </div>
       <div style="margin-top:8px" class="small">Código: <strong id="inviteCode">—</strong></div>
       <div style="margin-top:12px">
@@ -165,17 +162,16 @@
   </main>
 </div>
 
-<!-- Firebase v9 modular CDN (substitua as chaves abaixo) -->
 <script type="module">
   const firebaseConfig = {
    apiKey: "AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ",
-  authDomain: "gatilhanao.firebaseapp.com",
-  projectId: "gatilhanao",
-  storageBucket: "gatilhanao.firebasestorage.app",
-  messagingSenderId: "989297905655",
-  appId: "1:989297905655:web:2db01ac43befc89f9328f2",
-  measurementId: "G-Q2Q6NYVCQN"
-  };
+   authDomain: "gatilhanao.firebaseapp.com",
+   projectId: "gatilhanao",
+   storageBucket: "gatilhanao.firebasestorage.app",
+   messagingSenderId: "989297905655",
+   appId: "1:989297905655:web:2db01ac43befc89f9328f2",
+   measurementId: "G-Q2Q6
+};
 
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
   import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
