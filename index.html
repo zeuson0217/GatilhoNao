@@ -1,560 +1,584 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Gatilho Não — Firebase (Light / Dark / Romântico) + Painel e Relatório</title>
-<style>
-  :root{
-    --bg:#f6f8fb;--card:#fff;--accent:#4a90e2;--danger:#e24a4a;--muted:#6b7280;--radius:12px;font-family:Inter,system-ui,Segoe UI,Roboto,Arial
-  }
-  [data-theme="dark"]{ --bg:#0f1724; --card:#0b1220; --accent:#4aa3ff; --muted:#9aa7bb; color:#e6eef8 }
-  [data-theme="romantic"]{ --bg:#fff6f8; --card:#fff0f4; --accent:#ff7aa2; --muted:#7b5a6a }
-  *{box-sizing:border-box}
-  body{margin:0;padding:16px;background:var(--bg);color:var(--fg, #0f172a)}
-  .app{max-width:1100px;margin:12px auto}
-  header{display:flex;align-items:center;gap:12px}
-  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--accent),#7bd389);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
-  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(12,20,40,0.04);margin-top:14px}
-  label{display:block;margin-bottom:6px;color:var(--muted);font-size:0.9rem}
-  input,textarea,select,button{font-family:inherit}
-  input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:transparent}
-  textarea{min-height:84px}
-  .row{display:flex;gap:8px}
-  .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:white;cursor:pointer}
-  .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(74,144,226,0.12)}
-  .small{font-size:0.85rem;color:var(--muted)}
-  .layout{display:grid;grid-template-columns:1fr;gap:12px}
-  @media(min-width:980px){ .layout{grid-template-columns:360px 1fr 320px} }
-  .list{display:flex;flex-direction:column;gap:10px}
-  .item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);background:linear-gradient(180deg,transparent,rgba(255,255,255,0.02))}
-  .controls{display:flex;gap:8px}
-  .meta{font-size:0.85rem;color:var(--muted)}
-  .chip{padding:6px 8px;border-radius:999px;border:1px solid rgba(0,0,0,0.04);background:transparent}
-  .int-bar{height:8px;border-radius:6px;background:rgba(0,0,0,0.06);overflow:hidden}
-  .int-fill{height:100%;border-radius:6px}
-  .danger{color:var(--danger);font-weight:700}
-  .top-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .hidden{display:none}
-  .chart{height:160px;border-radius:8px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;align-items:center;justify-content:center}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Um espaço privado para casais expressarem vulnerabilidades com mais calma, cuidado e clareza.">
+  <meta name="theme-color" content="#17241f">
+  <title>Gatilho Não — um espaço seguro para conversar</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2317241f'/%3E%3Cpath d='M19 21c7-7 19-5 22 3 7-1 10 8 5 13L32 50 18 37c-5-5-3-14 1-16Z' fill='%23f2b8a2'/%3E%3Cpath d='M23 31h18' stroke='%2317241f' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #17241f;
+      --ink-soft: #40544b;
+      --paper: #f6f5ef;
+      --paper-strong: #ebe9df;
+      --card: rgba(255,255,255,.82);
+      --line: #d9ddd5;
+      --moss: #315c4c;
+      --moss-deep: #234438;
+      --hero: #17241f;
+      --button: #234438;
+      --peach: #e99b7e;
+      --peach-soft: #f8dfd5;
+      --gold: #d2a64b;
+      --danger: #a84845;
+      --shadow: 0 18px 55px rgba(35,68,56,.10);
+      --radius: 24px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --ink: #edf5f1;
+      --ink-soft: #b8cbc2;
+      --paper: #101814;
+      --paper-strong: #17241f;
+      --card: rgba(27,42,35,.86);
+      --line: #385046;
+      --moss: #9cc9b5;
+      --moss-deep: #c5e4d6;
+      --hero: #09130f;
+      --button: #315c4c;
+      --peach: #f1af95;
+      --peach-soft: #432f29;
+      --gold: #e2bd69;
+      --danger: #ef8f8b;
+      --shadow: 0 22px 65px rgba(0,0,0,.25);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(233,155,126,.20), transparent 31rem),
+        radial-gradient(circle at 92% 20%, rgba(49,92,76,.15), transparent 34rem),
+        var(--paper);
+      font-size: 16px;
+      line-height: 1.5;
+      transition: background .25s ease, color .25s ease;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--peach) 60%, transparent);
+      outline-offset: 2px;
+    }
+    .hidden { display: none !important; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 64px; }
+
+    .topbar { display: flex; align-items: center; gap: 18px; margin-bottom: 30px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .mark {
+      width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center;
+      border-radius: 16px; color: #fff; background: var(--hero); box-shadow: var(--shadow);
+    }
+    .mark svg { width: 28px; height: 28px; }
+    .brand h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(1.35rem, 3vw, 1.7rem); line-height: 1; letter-spacing: -.03em; }
+    .brand p { margin: 5px 0 0; color: var(--ink-soft); font-size: .82rem; }
+    .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .icon-btn {
+      width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 14px;
+      color: var(--ink); background: var(--card); display: grid; place-items: center;
+    }
+    .icon-btn svg { width: 20px; height: 20px; }
+
+    .welcome {
+      display: grid; grid-template-columns: 1.25fr .75fr; min-height: 600px;
+      border: 1px solid var(--line); border-radius: 34px; overflow: hidden;
+      background: var(--card); box-shadow: var(--shadow);
+    }
+    .welcome-copy { padding: clamp(34px, 6vw, 72px); display: flex; flex-direction: column; justify-content: center; }
+    .eyebrow { color: var(--moss); font-weight: 800; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; }
+    .welcome h2 { max-width: 700px; margin: 16px 0 20px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.6rem, 6vw, 5.5rem); line-height: .98; letter-spacing: -.055em; font-weight: 500; }
+    .welcome h2 em { color: var(--peach); font-weight: 500; }
+    .welcome-copy > p { max-width: 620px; margin: 0 0 30px; color: var(--ink-soft); font-size: 1.05rem; }
+    .welcome-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .privacy-note { display: flex; gap: 10px; align-items: center; margin-top: 24px; color: var(--ink-soft); font-size: .86rem; }
+    .privacy-note svg { width: 18px; flex: 0 0 auto; color: var(--moss); }
+    .welcome-side { padding: 30px; display: flex; align-items: flex-end; background: var(--hero); position: relative; overflow: hidden; }
+    .welcome-side::before, .welcome-side::after { content: ""; position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); }
+    .welcome-side::before { width: 420px; height: 420px; right: -190px; top: -90px; }
+    .welcome-side::after { width: 280px; height: 280px; left: -130px; bottom: 10px; }
+    .promise { position: relative; z-index: 1; color: #fff; }
+    .promise-number { font-family: Georgia, serif; color: var(--peach); font-size: 4.5rem; line-height: 1; }
+    .promise p { margin: 10px 0 0; max-width: 270px; color: rgba(255,255,255,.72); }
+
+    .btn {
+      min-height: 46px; border: 1px solid transparent; border-radius: 14px; padding: 11px 17px;
+      font-weight: 750; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      color: #fff; background: var(--button); transition: transform .18s ease, background .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn svg { width: 18px; height: 18px; }
+    .btn.secondary { color: var(--ink); background: transparent; border-color: var(--line); }
+    .btn.soft { color: var(--moss-deep); background: var(--peach-soft); }
+    .btn.danger { background: var(--danger); }
+    .btn.small { min-height: 38px; padding: 8px 12px; border-radius: 11px; font-size: .88rem; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .app-grid { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 22px; }
+    .sidebar { position: sticky; top: 18px; height: fit-content; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+    .profile { padding: 20px; }
+    .profile-row { display: flex; align-items: center; gap: 12px; }
+    .avatar { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; color: #fff; background: var(--moss-deep); font-weight: 800; }
+    .profile strong, .profile span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .profile span { color: var(--ink-soft); font-size: .8rem; max-width: 170px; }
+    .nav { margin-top: 12px; padding: 8px; }
+    .nav button { width: 100%; border: 0; padding: 12px; border-radius: 13px; color: var(--ink-soft); background: transparent; display: flex; align-items: center; gap: 11px; text-align: left; font-weight: 700; }
+    .nav button.active { color: var(--moss-deep); background: var(--peach-soft); }
+    .nav svg { width: 19px; }
+    .connection { margin-top: 12px; padding: 18px; }
+    .connection h3 { margin: 0 0 5px; font-size: 1rem; }
+    .connection p { margin: 0 0 14px; color: var(--ink-soft); font-size: .85rem; }
+    .code-box { padding: 13px; border: 1px dashed var(--moss); border-radius: 14px; text-align: center; background: color-mix(in srgb, var(--moss) 8%, transparent); }
+    .code-box span { display: block; color: var(--ink-soft); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; }
+    .code-box strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.1rem; letter-spacing: .08em; }
+    .connection-actions { display: grid; gap: 8px; margin-top: 10px; }
+    .support { width: 100%; margin-top: 12px; color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); background: transparent; }
+
+    .main { min-width: 0; }
+    .page-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-end; margin: 4px 2px 22px; }
+    .page-head h2 { margin: 0; font-family: Georgia, serif; font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.05; letter-spacing: -.04em; font-weight: 500; }
+    .page-head p { margin: 8px 0 0; color: var(--ink-soft); }
+    .status-pill { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); background: var(--card); font-size: .82rem; font-weight: 700; }
+    .status-pill::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--gold); }
+    .status-pill.connected::before { background: #3aa66f; }
+
+    .compose { padding: 22px; }
+    .compose-top { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .compose h3, .section-title h3 { margin: 0; font-size: 1.08rem; }
+    .compose-top p, .section-title p { margin: 4px 0 0; color: var(--ink-soft); font-size: .86rem; }
+    .visibility-toggle { display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); }
+    .visibility-toggle button { border: 0; border-radius: 9px; padding: 7px 10px; color: var(--ink-soft); background: transparent; font-size: .8rem; font-weight: 750; }
+    .visibility-toggle button.active { color: #fff; background: var(--button); }
+    .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 7px; color: var(--ink-soft); font-size: .82rem; font-weight: 750; }
+    input, textarea, select {
+      width: 100%; border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; color: var(--ink); background: color-mix(in srgb, var(--card) 90%, var(--paper));
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    input[type="range"] { accent-color: var(--peach); padding: 8px 0; border: 0; background: transparent; }
+    .intensity-head { display: flex; justify-content: space-between; align-items: center; }
+    .intensity-head output { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff; background: var(--button); font-weight: 800; }
+    .form-actions { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 17px; }
+    .confidential { display: flex; gap: 9px; align-items: center; color: var(--ink-soft); font-size: .82rem; }
+    .confidential input { width: 18px; height: 18px; margin: 0; }
+    .form-buttons { display: flex; gap: 8px; }
+
+    .metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+    .metric { padding: 17px; }
+    .metric span { color: var(--ink-soft); font-size: .78rem; font-weight: 700; }
+    .metric strong { display: block; margin-top: 7px; font-family: Georgia, serif; font-size: 1.9rem; font-weight: 500; }
+    .metric .mini { color: var(--moss); font-family: inherit; font-size: .8rem; font-weight: 750; }
+
+    .feed { padding: 20px; }
+    .section-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .filter { width: auto; min-width: 150px; padding: 9px 11px; font-size: .82rem; }
+    .list { display: grid; gap: 10px; }
+    .item { padding: 16px; border: 1px solid var(--line); border-radius: 17px; background: color-mix(in srgb, var(--card) 88%, transparent); }
+    .item-top { display: flex; gap: 12px; align-items: flex-start; }
+    .item-icon { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 12px; display: grid; place-items: center; color: var(--moss-deep); background: var(--peach-soft); }
+    .item-icon svg { width: 18px; }
+    .item-body { min-width: 0; flex: 1; }
+    .item-title { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .item h4 { margin: 0; font-size: 1rem; }
+    .meta { margin-top: 3px; color: var(--ink-soft); font-size: .76rem; }
+    .item p { margin: 11px 0 0; color: var(--ink-soft); white-space: pre-line; }
+    .intensity { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: var(--button); font-weight: 800; }
+    .item-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); }
+    .tag { padding: 5px 8px; border-radius: 999px; color: var(--ink-soft); background: var(--paper-strong); font-size: .72rem; font-weight: 750; }
+    .item-actions { display: flex; gap: 6px; }
+    .link-btn { border: 0; padding: 5px 7px; color: var(--moss); background: transparent; font-size: .78rem; font-weight: 800; }
+    .link-btn.delete { color: var(--danger); }
+    .empty { padding: 34px 20px; border: 1px dashed var(--line); border-radius: 17px; text-align: center; color: var(--ink-soft); }
+    .empty svg { width: 30px; color: var(--peach); }
+    .empty strong { display: block; margin-top: 8px; color: var(--ink); }
+
+    .toast { position: fixed; z-index: 50; right: 22px; bottom: 22px; max-width: min(380px, calc(100% - 32px)); padding: 13px 16px; border-radius: 14px; color: #fff; background: var(--ink); box-shadow: var(--shadow); transform: translateY(30px); opacity: 0; pointer-events: none; transition: .25s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    dialog { width: min(520px, calc(100% - 28px)); border: 1px solid var(--line); border-radius: 24px; padding: 0; color: var(--ink); background: var(--paper); box-shadow: 0 30px 100px rgba(0,0,0,.3); }
+    dialog::backdrop { background: rgba(12,20,17,.68); backdrop-filter: blur(4px); }
+    .modal { padding: 25px; }
+    .modal h3 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 1.7rem; font-weight: 500; }
+    .modal p { color: var(--ink-soft); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+    .help-cards { display: grid; gap: 9px; margin: 16px 0; }
+    .help-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; }
+    .help-card span { color: var(--ink-soft); font-size: .8rem; }
+    .help-card strong { font-size: 1.2rem; }
+
+    @media (max-width: 860px) {
+      .welcome { grid-template-columns: 1fr; min-height: 0; }
+      .welcome-side { min-height: 230px; }
+      .app-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .profile, .nav { display: none; }
+      .connection { margin-top: 0; }
+      .support { margin-top: 0; height: 100%; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 16px; }
+      .brand p { display: none; }
+      .welcome-copy { padding: 34px 24px; }
+      .welcome h2 { font-size: clamp(2.7rem, 14vw, 4rem); }
+      .welcome-side { min-height: 190px; }
+      .sidebar { grid-template-columns: 1fr; }
+      .support { padding: 13px; }
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .compose-top { align-items: flex-start; flex-direction: column; }
+      .fields { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .form-actions { align-items: stretch; flex-direction: column; }
+      .form-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+      .metrics { grid-template-columns: 1fr; }
+      .section-title { align-items: flex-start; flex-direction: column; }
+      .filter { width: 100%; }
+      .item-footer { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
 </head>
 <body data-theme="light">
-<div class="app">
-  <header>
-    <div class="logo">GN</div>
-    <div>
-      <h1>Gatilho Não</h1>
-      <div class="small">Escolha tema, gere código de convidado e compartilhe gatilhos com um parceiro.</div>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-      <label class="small">Tema:</label>
-      <select id="themeSelect" class="chip" aria-label="Escolher tema">
-        <option value="light">Claro</option>
-        <option value="dark">Escuro</option>
-        <option value="romantic">Romântico</option>
-      </select>
-    </div>
-  </header>
-
-  <main class="layout">
-    <section class="card">
-      <div id="authArea">
-        <h3>Acesso</h3>
-        <div id="anon" class="row" style="align-items:center">
-          <button id="googleSignIn" class="btn">Entrar com Google</button>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6.7 5.4c2.6-2.2 6.6-1.2 7.6 1.8 2.9-.3 4.7 3.4 2.6 5.5L12 17.6l-4.9-4.9c-2.1-2.1-1.7-5.7-.4-7.3Z" fill="currentColor" opacity=".95"/><path d="M8 11h8" stroke="#17241f" stroke-width="1.8" stroke-linecap="round"/></svg>
         </div>
-        <div id="userInfo" class="hidden">
-          <div class="small">Conectado como <strong id="userLabel"></strong></div>
-          <div style="margin-top:8px" class="top-controls">
-            <button id="signOut" class="btn ghost">Sair</button>
-          </div>
-          <div style="margin-top:8px"><span class="small">Código da sala atual: </span><strong id="currentCode">—</strong></div>
-        </div>
+        <div><h1>Gatilho Não</h1><p>Falar no seu tempo também é conversar.</p></div>
       </div>
-    </section>
-
-    <section class="card" style="display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
-        <h2 style="margin:0">Adicionar gatilho</h2>
-        <div class="top-controls">
-          <button id="exportBtn" class="btn ghost">Exportar JSON</button>
-          <button id="importBtn" class="btn ghost">Importar</button>
-          <input id="fileInput" type="file" accept="application/json" class="hidden" />
-        </div>
+      <div class="top-actions">
+        <button id="themeBtn" class="icon-btn" aria-label="Ativar tema escuro" title="Alternar tema">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 15.2A8 8 0 1 1 8.8 4 6.5 6.5 0 0 0 20 15.2Z"/></svg>
+        </button>
+        <button id="headerSignOut" class="btn secondary small hidden">Sair</button>
       </div>
+    </header>
 
-      <form id="form">
-        <label for="type">Tipo</label>
-        <select id="type"><option value="palavra">Palavra</option><option value="atitude">Atitude</option><option value="contexto">Contexto</option></select>
-        <label for="text">Palavra / atitude</label>
-        <input id="text" placeholder="Ex: 'gritar'" required />
-        <div class="row" style="align-items:center;margin-top:8px">
-          <div style="flex:1">
-            <label for="intensity">Intensidade: <span id="intLabel">5</span></label>
-            <input id="intensity" type="range" min="1" max="10" value="5" />
+    <main>
+      <section id="welcomeView" class="welcome">
+        <div class="welcome-copy">
+          <span class="eyebrow">Um espaço de pausa</span>
+          <h2>O que é difícil dizer também <em>merece ser ouvido.</em></h2>
+          <p>Registre situações, sentimentos e o cuidado que você precisa. Compartilhe apenas quando estiver pronto e ajude seu parceiro a entender sem transformar vulnerabilidade em confronto.</p>
+          <div class="welcome-actions">
+            <button id="googleSignIn" class="btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.2c0-.7-.1-1.4-.2-2H12v3.7h5a4.3 4.3 0 0 1-1.9 2.8v2.4h3c1.8-1.6 2.9-4 2.9-6.9Z"/><path d="M12 21c2.5 0 4.6-.8 6.1-2.2l-3-2.4c-.8.6-1.9.9-3.1.9-2.4 0-4.5-1.6-5.2-3.8H3.7v2.5A9.2 9.2 0 0 0 12 21Z"/><path d="M6.8 13.5a5.6 5.6 0 0 1 0-3.5V7.5H3.7a9.1 9.1 0 0 0 0 8.3l3.1-2.3Z"/><path d="M12 6.2c1.4 0 2.6.5 3.5 1.4l2.7-2.7A9 9 0 0 0 3.7 7.5L6.8 10c.7-2.2 2.8-3.8 5.2-3.8Z"/></svg>
+              Entrar com Google
+            </button>
           </div>
-          <div style="width:160px">
-            <label for="visibility">Visibilidade</label>
-            <select id="visibility"><option value="private">Privado</option><option value="partner">Compartilhado</option></select>
+          <div class="privacy-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Você decide o que é privado e o que pode ser visto pelo parceiro.
           </div>
         </div>
-        <label for="notes">Notas (opcional)</label>
-        <textarea id="notes"></textarea>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:6px"><input type="checkbox" id="confidential"> Marcar como confidencial (somente terapia)</label>
+        <aside class="welcome-side">
+          <div class="promise"><div class="promise-number">2</div><p>pessoas, um espaço compartilhado e o direito de falar sem pressa.</p></div>
+        </aside>
+      </section>
 
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn" id="saveBtn">Salvar</button>
-          <button type="button" id="clearBtn" class="btn ghost">Limpar</button>
-          <button type="button" id="crisisBtn" class="btn" style="background:var(--danger)">Estou em crise</button>
-        </div>
-      </form>
-
-      <hr>
-
-      <div style="display:grid;grid-template-columns:1fr 260px;gap:12px;align-items:start">
-        <div>
-          <h3>Lista de gatilhos (Seus e do Parceiro)</h3>
-          <div id="list" class="list"></div>
-        </div>
-        <div>
-          <h3>Relatórios & Dicas</h3>
-          <div class="card" id="summaryCard" style="padding:10px">
-            <div style="margin-top:10px">
-              <div class="small">Distribuição por intensidade</div>
-              <div id="intChart" class="chart">—</div>
+      <section id="appView" class="app-grid hidden" aria-live="polite">
+        <aside class="sidebar">
+          <div class="profile panel">
+            <div class="profile-row"><div id="avatar" class="avatar">EU</div><div><strong id="userName">Você</strong><span id="userEmail"></span></div></div>
+          </div>
+          <nav class="nav panel" aria-label="Navegação principal">
+            <button class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12 12 5l8 7v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 21v-6h6v6"/></svg>Nosso espaço</button>
+          </nav>
+          <section class="connection panel">
+            <h3>Conexão do casal</h3>
+            <p id="connectionCopy">Crie um código e envie para a pessoa que você quer conectar.</p>
+            <div id="codeBox" class="code-box hidden"><span>Código do casal</span><strong id="roomCode">—</strong></div>
+            <div class="connection-actions">
+              <button id="createRoom" class="btn small">Criar código</button>
+              <button id="joinRoom" class="btn secondary small">Usar um código</button>
+              <button id="copyRoom" class="btn soft small hidden">Copiar código</button>
             </div>
-            <div style="margin-top:10px">
-              <div class="small">Gatilhos mais frequentes</div>
-              <div id="freqList" class="small" style="display:flex; flex-direction:column; gap: 4px;">—</div>
+          </section>
+          <button id="supportBtn" class="btn support">Preciso de apoio agora</button>
+        </aside>
+
+        <div class="main">
+          <div class="page-head">
+            <div><h2>Nosso espaço</h2><p>Um lugar para compreender antes de responder.</p></div>
+            <div id="connectionStatus" class="status-pill">Aguardando conexão</div>
+          </div>
+
+          <section class="compose panel">
+            <div class="compose-top">
+              <div><h3>Quero contar uma coisa</h3><p>Escreva do seu jeito. Você pode editar depois.</p></div>
+              <div class="visibility-toggle" role="group" aria-label="Quem pode ver">
+                <button type="button" data-visibility="private" class="active">Só eu</button>
+                <button type="button" data-visibility="partner">Nós dois</button>
+              </div>
             </div>
-          </div>
+            <form id="triggerForm">
+              <input type="hidden" id="visibility" value="private">
+              <div class="fields">
+                <div class="field">
+                  <label for="type">O que aconteceu?</label>
+                  <select id="type"><option value="palavra">Uma palavra</option><option value="atitude">Uma atitude</option><option value="contexto">Uma situação</option><option value="limite">Um limite</option></select>
+                </div>
+                <div class="field">
+                  <label for="text">Resuma em poucas palavras</label>
+                  <input id="text" maxlength="120" placeholder="Ex.: quando levantamos a voz" required>
+                </div>
+                <div class="field full">
+                  <label for="notes">O que eu senti e o que pode me ajudar</label>
+                  <textarea id="notes" maxlength="1200" placeholder="Ex.: eu me fecho quando isso acontece. Preciso de alguns minutos e depois gostaria que você me perguntasse como estou."></textarea>
+                </div>
+                <div class="field">
+                  <div class="intensity-head"><label for="intensity">Quanto isso me afeta</label><output id="intensityValue" for="intensity">5</output></div>
+                  <input id="intensity" type="range" min="1" max="10" value="5">
+                </div>
+                <div class="field">
+                  <label for="when">Quando isso costuma acontecer? <span style="font-weight:500">(opcional)</span></label>
+                  <input id="when" maxlength="120" placeholder="Ex.: em conversas sobre dinheiro">
+                </div>
+              </div>
+              <div class="form-actions">
+                <label class="confidential"><input id="confidential" type="checkbox">Manter como anotação confidencial</label>
+                <div class="form-buttons"><button id="clearBtn" class="btn secondary" type="button">Limpar</button><button id="saveBtn" class="btn" type="submit">Guardar</button></div>
+              </div>
+            </form>
+          </section>
+
+          <section class="metrics" aria-label="Resumo">
+            <div class="metric panel"><span>Registros neste espaço</span><strong id="totalMetric">0</strong></div>
+            <div class="metric panel"><span>Compartilhados</span><strong id="sharedMetric">0</strong></div>
+            <div class="metric panel"><span>Intensidade média</span><strong id="averageMetric">—</strong><span class="mini">de 10</span></div>
+          </section>
+
+          <section class="feed panel">
+            <div class="section-title">
+              <div><h3>O que foi colocado em palavras</h3><p>Seus registros e o que seu parceiro escolheu compartilhar.</p></div>
+              <select id="listFilter" class="filter" aria-label="Filtrar registros"><option value="all">Ver tudo</option><option value="mine">Só meus</option><option value="partner">Do parceiro</option><option value="high">Mais intensos</option></select>
+            </div>
+            <div id="list" class="list"></div>
+          </section>
         </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <dialog id="codeDialog">
+    <form id="codeForm" class="modal" method="dialog">
+      <h3>Conectar ao seu parceiro</h3><p>Digite o código que recebeu. Depois da conexão, vocês verão apenas o que cada um marcou como “Nós dois”.</p>
+      <label for="codeInput">Código do casal</label><input id="codeInput" autocomplete="off" placeholder="Cole o código aqui" required>
+      <div class="modal-actions"><button class="btn secondary" value="cancel">Cancelar</button><button id="confirmCode" class="btn" value="default">Conectar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="supportDialog">
+    <div class="modal">
+      <h3>Você não precisa passar por isso sozinho.</h3>
+      <p>Se houver risco imediato, procure um lugar seguro e acione um serviço de emergência. Para apoio emocional, o CVV oferece escuta gratuita e sigilosa.</p>
+      <div class="help-cards">
+        <div class="help-card"><div><strong>188</strong><span>CVV — apoio emocional, 24 horas</span></div><a class="btn small" href="tel:188">Ligar</a></div>
+        <div class="help-card"><div><strong>192</strong><span>SAMU — urgência médica</span></div><a class="btn danger small" href="tel:192">Ligar</a></div>
+        <div class="help-card"><div><strong>190</strong><span>Polícia Militar — risco imediato</span></div><a class="btn danger small" href="tel:190">Ligar</a></div>
       </div>
+      <p style="font-size:.78rem">Este espaço não substitui atendimento psicológico, médico ou de emergência.</p>
+      <div class="modal-actions"><button id="closeSupport" class="btn secondary">Voltar</button></div>
+    </div>
+  </dialog>
 
-    </section>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+    import { getFirestore, collection, addDoc, query, where, onSnapshot, getDoc, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
-    <aside class="card">
-      <h3>Painel de parceria</h3>
-      <div class="small">Crie um código de sala e envie ao parceiro. Se o parceiro entrar com o código, gatilhos com visibilidade 'Compartilhado' aparecem para ambos.</div>
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <button id="genCode" class="btn">Gerar código</button>
-        <button id="pasteCode" class="btn ghost">Inserir código</button>
-      </div>
-      <div style="margin-top:8px" class="small">Código: <strong id="inviteCode">—</strong></div>
-      <div style="margin-top:12px">
-        <h4>Parceiros conectados</h4>
-        <div id="membersList" class="small">—</div>
-      </div>
-    </aside>
-  </main>
-</div>
-
-<script type="module">
-  // Cole aqui a configuração do seu projeto Firebase
-  const firebaseConfig = {
-  apiKey: "AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ",
-  authDomain: "gatilhanao.firebaseapp.com",
-  projectId: "gatilhanao",
-  storageBucket: "gatilhanao.firebasestorage.app",
-  messagingSenderId: "989297905655",
-  appId: "1:989297905655:web:2db01ac43befc89f9328f2",
-  measurementId: "G-Q2Q6NYVCQN"
-  };
-
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-  import { getFirestore, collection, addDoc, query, where, onSnapshot, getDocs, doc, setDoc, updateDoc, getDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  // --- UI refs ---
-  const themeSelect = document.getElementById('themeSelect');
-  const googleSignIn = document.getElementById('googleSignIn');
-  const anon = document.getElementById('anon');
-  const userInfo = document.getElementById('userInfo');
-  const userLabel = document.getElementById('userLabel');
-  const signOutBtn = document.getElementById('signOut');
-  const currentCodeEl = document.getElementById('currentCode');
-
-  const form = document.getElementById('form');
-  const listEl = document.getElementById('list');
-  const intensity = document.getElementById('intensity');
-  const intLabel = document.getElementById('intLabel');
-  const intChart = document.getElementById('intChart');
-  const freqList = document.getElementById('freqList');
-
-  const genCode = document.getElementById('genCode');
-  const pasteCode = document.getElementById('pasteCode');
-  const inviteCodeEl = document.getElementById('inviteCode');
-  const membersList = document.getElementById('membersList');
-  
-  const fileInput = document.getElementById('fileInput');
-  const exportBtn = document.getElementById('exportBtn');
-  const importBtn = document.getElementById('importBtn');
-
-  // --- State ---
-  let currentUser = null;
-  let currentRoom = null;
-  let unsubscribeUser = null;
-  let unsubscribePartner = null;
-  let userTriggers = [];
-  let partnerTriggers = [];
-
-  // --- Theme ---
-  themeSelect.addEventListener('change', () => { document.body.setAttribute('data-theme', themeSelect.value); });
-
-  // --- Auth ---
-  googleSignIn.addEventListener('click', async () => {
-    const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); alert('Erro ao entrar: ' + e.message); }
-  });
-
-  onAuthStateChanged(auth, async user => {
-    currentUser = user;
-    if (user) {
-      anon.classList.add('hidden');
-      userInfo.classList.remove('hidden');
-      userLabel.textContent = user.email || user.displayName || user.uid;
-      // Check if user has an active room
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists() && userDoc.data().activeRoom) {
-        currentRoom = userDoc.data().activeRoom;
-        inviteCodeEl.textContent = currentRoom;
-        currentCodeEl.textContent = currentRoom;
-      }
-    } else {
-      anon.classList.remove('hidden');
-      userInfo.classList.add('hidden');
-      currentRoom = null;
-      userTriggers = [];
-      partnerTriggers = [];
-    }
-    startListeners();
-  });
-
-  signOutBtn.addEventListener('click', () => signOut(auth));
-
-  // --- Partnership / Rooms ---
-  genCode.addEventListener('click', async () => {
-    if (!currentUser) return alert('Você precisa entrar primeiro.');
-    try {
-      const roomRef = await addDoc(collection(db, 'rooms'), { owner: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp() });
-      currentRoom = roomRef.id;
-      inviteCodeEl.textContent = currentRoom;
-      currentCodeEl.textContent = currentRoom;
-      await setDoc(doc(db, 'users', currentUser.uid), { activeRoom: currentRoom, email: currentUser.email }, { merge: true });
-      startListeners();
-    } catch (e) { console.error(e); alert('Erro ao criar sala: ' + e.message); }
-  });
-
-  pasteCode.addEventListener('click', async () => {
-    if (!currentUser) return alert('Você precisa entrar primeiro.');
-    const code = prompt('Cole o código recebido do parceiro');
-    if (!code) return;
-
-    try {
-      const roomRef = doc(db, 'rooms', code);
-      const roomSnap = await getDoc(roomRef);
-      if (!roomSnap.exists()) {
-        alert('Código inválido ou sala não encontrada.');
-        return;
-      }
-      const data = roomSnap.data();
-      if (!data.members.includes(currentUser.uid)) {
-        await updateDoc(roomRef, { members: [...data.members, currentUser.uid] });
-      }
-      currentRoom = code;
-      inviteCodeEl.textContent = currentRoom;
-      currentCodeEl.textContent = currentRoom;
-      await setDoc(doc(db, 'users', currentUser.uid), { activeRoom: currentRoom, email: currentUser.email }, { merge: true });
-      startListeners();
-      alert('Entrou na sala. Gatilhos compartilhados agora serão visíveis.');
-    } catch (error) {
-      console.error("Erro ao entrar na sala:", error);
-      alert(`Não foi possível entrar na sala: ${error.message}`);
-    }
-  });
-
-  async function updateMembers() {
-    if (!currentRoom) {
-        membersList.textContent = '—';
-        return;
-    }
-    const roomSnap = await getDoc(doc(db, 'rooms', currentRoom));
-    if (!roomSnap.exists()) return;
-    const members = roomSnap.data().members || [];
-    
-    // Fetch user details for richer display if desired, for now just UIDs
-    membersList.textContent = members.map(uid => uid === currentUser.uid ? 'Você' : 'Parceiro').join(', ');
-  }
-
-  // --- Real-time Listeners ---
-  function startListeners() {
-    if (unsubscribeUser) unsubscribeUser();
-    if (unsubscribePartner) unsubscribePartner();
-    userTriggers = [];
-    partnerTriggers = [];
-
-    if (!currentUser) {
-      listEl.innerHTML = '<div class="small">Faça login para ver seus gatilhos.</div>';
-      renderAllTriggers();
-      return;
-    }
-
-    // Listener for user's own triggers
-    const qUser = query(collection(db, 'triggers'), where('owner', '==', currentUser.uid));
-    unsubscribeUser = onSnapshot(qUser, snap => {
-      userTriggers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderAllTriggers();
-    });
-
-    // Listener for partner's shared triggers
-    if (currentRoom) {
-      const qPartner = query(collection(db, 'triggers'), where('roomId', '==', currentRoom), where('owner', '!=', currentUser.uid));
-      unsubscribePartner = onSnapshot(qPartner, snap => {
-        partnerTriggers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderAllTriggers();
-      });
-    }
-    updateMembers();
-  }
-  
-  function renderAllTriggers() {
-    const allItems = [...userTriggers, ...partnerTriggers];
-    render(allItems);
-  }
-
-  // --- Rendering ---
-  function render(items) {
-    listEl.innerHTML = '';
-    if (items.length === 0) {
-      listEl.innerHTML = '<div class="small">Nenhum gatilho salvo.</div>';
-      computeSummary([]);
-      return;
-    }
-    
-    items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    
-    items.forEach(it => {
-      const div = document.createElement('div');
-      div.className = 'item';
-      const barPct = Math.min(100, (it.intensity || 5) * 10);
-      const isOwner = it.owner === currentUser.uid;
-
-      div.innerHTML = `
-        <div style="flex:1">
-          <div style="font-weight:700">${escape(it.text)} ${!isOwner ? '<span>(Parceiro)</span>' : ''}</div>
-          <div class="meta">${escape(it.type)} · ${it.visibility || 'private'} ${it.confidential ? '· confidencial' : ''}</div>
-          <div class="meta">${escape(it.notes || '')}</div>
-          <div style="margin-top:6px" class="int-bar">
-            <div class="int-fill" style="width:${barPct}%;background:linear-gradient(90deg, #7bd389, #ffb86b, #e24a4a);"></div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          <div class="meta">${it.intensity}</div>
-          ${isOwner ? `<div class="controls"><button class="btn ghost editBtn" data-id="${it.id}">Editar</button><button class="btn ghost delBtn" data-id="${it.id}">Excluir</button></div>` : '<div class="small">Somente leitura</div>'}
-        </div>`;
-      listEl.appendChild(div);
-    });
-
-    attachListHandlers();
-    computeSummary(items);
-  }
-
-  function attachListHandlers() {
-    listEl.querySelectorAll('.delBtn').forEach(b => b.addEventListener('click', async (e) => {
-      const id = e.target.dataset.id;
-      if (!confirm('Tem certeza que deseja excluir este gatilho?')) return;
-      try { await deleteDoc(doc(db, 'triggers', id)); } catch(err) { alert("Erro ao excluir.")}
-    }));
-
-    listEl.querySelectorAll('.editBtn').forEach(b => b.addEventListener('click', async (e) => {
-      const id = e.target.dataset.id;
-      const snap = await getDoc(doc(db, 'triggers', id));
-      if (!snap.exists()) return;
-      const d = snap.data();
-      form.type.value = d.type;
-      form.text.value = d.text;
-      form.intensity.value = d.intensity;
-      intLabel.textContent = d.intensity;
-      form.visibility.value = d.visibility;
-      form.notes.value = d.notes || '';
-      form.confidential.checked = !!d.confidential;
-      form.dataset.editId = id;
-      form.querySelector('#saveBtn').textContent = 'Atualizar';
-    }));
-  }
-
-  function computeSummary(items) {
-    if (items.length === 0) {
-        intChart.innerHTML = '—';
-        freqList.innerHTML = '—';
-        return;
-    }
-    
-    const buckets = [0, 0, 0]; // baixo 1-3, médio 4-7, alto 8-10
-    const freq = {};
-    items.forEach(it => {
-        const i = Number(it.intensity) || 5;
-        if (i <= 3) buckets[0]++;
-        else if (i <= 7) buckets[1]++;
-        else buckets[2]++;
-        const textKey = it.text.toLowerCase().trim();
-        freq[textKey] = (freq[textKey] || 0) + 1;
-    });
-    
-    const total = items.length;
-    const heights = buckets.map(b => Math.max(5, (b / total) * 100)); // Altura em px, com mínimo de 5px para visibilidade
-    
-    intChart.innerHTML = `
-        <svg width="100%" height="120" viewBox="0 0 150 120" style="display: flex; align-items: flex-end; gap: 5px;">
-            <g>
-                <rect x="10" y="${100 - heights[0]}" width="40" height="${heights[0]}" fill="#7bd389" rx="4"/>
-                <text x="30" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Baixa (${buckets[0]})</text>
-            </g>
-            <g>
-                <rect x="55" y="${100 - heights[1]}" width="40" height="${heights[1]}" fill="#ffb86b" rx="4"/>
-                <text x="75" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Média (${buckets[1]})</text>
-            </g>
-            <g>
-                <rect x="100" y="${100 - heights[2]}" width="40" height="${heights[2]}" fill="#e24a4a" rx="4"/>
-                <text x="120" y="115" font-size="10" text-anchor="middle" fill="var(--muted)">Alta (${buckets[2]})</text>
-            </g>
-        </svg>
-    `;
-
-    const top = Object.entries(freq)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(x => `<div>- ${escape(x[0])} (${x[1]}x)</div>`)
-        .join('');
-        
-    freqList.innerHTML = top || '—';
-  }
-
-
-  // --- Form Logic ---
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentUser) return alert('Faça login para salvar.');
-
-    const payload = {
-      type: form.type.value,
-      text: form.text.value.trim(),
-      intensity: form.intensity.value,
-      visibility: form.visibility.value,
-      notes: form.notes.value.trim(),
-      confidential: form.confidential.checked,
-      owner: currentUser.uid,
-      updatedAt: serverTimestamp()
+    const firebaseConfig = {
+      apiKey: 'AIzaSyATZCZ1a2XLpXKzZ-woiCfVbCgixUgmuJQ',
+      authDomain: 'gatilhanao.firebaseapp.com',
+      projectId: 'gatilhanao',
+      storageBucket: 'gatilhanao.firebasestorage.app',
+      messagingSenderId: '989297905655',
+      appId: '1:989297905655:web:2db01ac43befc89f9328f2',
+      measurementId: 'G-Q2Q6NYVCQN'
     };
-    
-    const editId = form.dataset.editId;
-    try {
-        if (editId) {
-            await updateDoc(doc(db, 'triggers', editId), payload);
-            delete form.dataset.editId;
-            form.querySelector('#saveBtn').textContent = 'Salvar';
-        } else {
-            if (payload.visibility === 'partner' && currentRoom) {
-                payload.roomId = currentRoom;
-            }
-            payload.createdAt = serverTimestamp();
-            await addDoc(collection(db, 'triggers'), payload);
-        }
-        form.reset();
-        intLabel.textContent = '5'; // Reset label
-    } catch(err) {
-        console.error("Erro ao salvar:", err);
-        alert("Não foi possível salvar o gatilho. Tente novamente.");
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      welcome: $('welcomeView'), app: $('appView'), signIn: $('googleSignIn'), signOut: $('headerSignOut'),
+      userName: $('userName'), userEmail: $('userEmail'), avatar: $('avatar'), form: $('triggerForm'),
+      intensity: $('intensity'), intensityValue: $('intensityValue'), visibility: $('visibility'), list: $('list'),
+      listFilter: $('listFilter'), createRoom: $('createRoom'), joinRoom: $('joinRoom'), copyRoom: $('copyRoom'),
+      roomCode: $('roomCode'), codeBox: $('codeBox'), connectionStatus: $('connectionStatus'), connectionCopy: $('connectionCopy'),
+      codeDialog: $('codeDialog'), codeForm: $('codeForm'), codeInput: $('codeInput'), supportDialog: $('supportDialog'), toast: $('toast')
+    };
+    const state = { user: null, room: null, mine: [], partner: [], unsubMine: null, unsubPartner: null, editId: null };
+
+    function notify(message) {
+      els.toast.textContent = message; els.toast.classList.add('show');
+      clearTimeout(notify.timer); notify.timer = setTimeout(() => els.toast.classList.remove('show'), 3200);
     }
-  });
+    function setBusy(button, busy, label) { button.disabled = busy; if (label) button.textContent = busy ? 'Aguarde…' : label; }
+    function initials(name = 'Eu') { return name.split(/\s+/).slice(0,2).map(x => x[0]).join('').toUpperCase(); }
+    function formatDate(timestamp) { if (!timestamp?.toDate) return 'agora'; return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(timestamp.toDate()); }
 
-  document.getElementById('clearBtn').addEventListener('click', () => {
-    form.reset();
-    delete form.dataset.editId;
-    form.querySelector('#saveBtn').textContent = 'Salvar';
-    intLabel.textContent = '5';
-  });
-
-  intensity.addEventListener('input', () => { intLabel.textContent = intensity.value; });
-
-  // --- Import / Export ---
-  exportBtn.addEventListener('click', async () => {
-    if (!currentUser) return alert('Entre para exportar.');
-    const snaps = await getDocs(query(collection(db, 'triggers'), where('owner', '==', currentUser.uid)));
-    const arr = snaps.docs.map(d => {
-        const data = d.data();
-        // Firebase Timestamps não são serializáveis para JSON diretamente
-        delete data.createdAt;
-        delete data.updatedAt;
-        return data;
+    $('themeBtn').addEventListener('click', () => {
+      const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.body.dataset.theme = next; localStorage.setItem('gn-theme', next);
+      $('themeBtn').setAttribute('aria-label', next === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro');
     });
-    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `gatilhos_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
+    document.body.dataset.theme = localStorage.getItem('gn-theme') || 'light';
 
-  importBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const txt = await f.text();
-    try {
-      const imported = JSON.parse(txt);
-      if(!Array.isArray(imported)) throw new Error("O arquivo JSON deve conter um array de gatilhos.");
+    els.signIn.addEventListener('click', async () => {
+      setBusy(els.signIn, true);
+      try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+      catch (error) { console.error(error); notify('Não foi possível entrar. Tente novamente.'); setBusy(els.signIn, false, 'Entrar com Google'); }
+    });
+    els.signOut.addEventListener('click', () => signOut(auth));
 
-      for (const it of imported) {
-        delete it.id;
-        it.owner = currentUser.uid;
-        await addDoc(collection(db, 'triggers'), it);
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      if (!user) {
+        cleanupListeners(); state.room = null; state.mine = []; state.partner = [];
+        els.welcome.classList.remove('hidden'); els.app.classList.add('hidden'); els.signOut.classList.add('hidden');
+        return;
       }
-      alert(`Importado com sucesso!`);
-    } catch (e) {
-      alert('Falha na importação: ' + e.message);
-    } finally {
-      fileInput.value = '';
+      els.userName.textContent = user.displayName || 'Você'; els.userEmail.textContent = user.email || '';
+      els.avatar.textContent = initials(user.displayName); els.welcome.classList.add('hidden'); els.app.classList.remove('hidden'); els.signOut.classList.remove('hidden');
+      try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        state.room = userSnap.exists() ? userSnap.data().activeRoom || null : null;
+      } catch (error) { console.error(error); notify('Entramos, mas não foi possível recuperar sua conexão.'); }
+      updateConnectionUI(); startListeners();
+    });
+
+    function cleanupListeners() { if (state.unsubMine) state.unsubMine(); if (state.unsubPartner) state.unsubPartner(); state.unsubMine = null; state.unsubPartner = null; }
+    function startListeners() {
+      cleanupListeners(); if (!state.user) return;
+      state.unsubMine = onSnapshot(query(collection(db, 'triggers'), where('owner', '==', state.user.uid)), snap => {
+        state.mine = snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'mine' })); render();
+      }, error => { console.error(error); notify('Não foi possível carregar seus registros.'); });
+      if (state.room) {
+        state.unsubPartner = onSnapshot(query(collection(db, 'triggers'), where('roomId', '==', state.room), where('visibility', '==', 'partner')), snap => {
+          state.partner = snap.docs.filter(d => d.data().owner !== state.user.uid && !d.data().confidential).map(d => ({ id: d.id, ...d.data(), source: 'partner' })); render();
+        }, error => { console.error(error); notify('A conexão existe, mas os registros compartilhados não puderam ser carregados.'); });
+      } else { state.partner = []; render(); }
     }
-  });
 
-  // --- Crisis Button ---
-  document.getElementById('crisisBtn').addEventListener('click', () => alert('Se estiver em crise: respire fundo, procure alguém de confiança ou um local seguro. Ligue para 188 (CVV - Centro de Valorização da Vida) para conversar. Em caso de risco imediato, ligue para 190 (Polícia) ou 192 (SAMU).'));
-
-  // --- Helper ---
-  function escape(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-  // --- Firestore Security Rules Suggestion (copy to Firebase console) ---
-  /*
-  rules_version = '2';
-  service cloud.firestore {
-    match /databases/{database}/documents {
-      match /triggers/{triggerId} {
-        // Allow read if user is owner OR if trigger is in a room and user is a member of that room
-        allow read: if request.auth != null && 
-                    (resource.data.owner == request.auth.uid || 
-                    (resource.data.roomId != null && get(/databases/$(database)/documents/rooms/$(resource.data.roomId)).data.members[request.auth.uid] == true));
-        // Allow create only if the owner field matches the user's UID
-        allow create: if request.auth != null && request.resource.data.owner == request.auth.uid;
-        // Allow update/delete only if user is the original owner
-        allow update, delete: if request.auth != null && resource.data.owner == request.auth.uid;
-      }
-      match /rooms/{roomId} {
-        allow read, create: if request.auth != null;
-        // Only the room owner can update the room (e.g., add new members)
-        allow update: if request.auth != null && resource.data.owner == request.auth.uid;
-      }
-      match /users/{userId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
+    function updateConnectionUI() {
+      const connected = Boolean(state.room);
+      els.codeBox.classList.toggle('hidden', !connected); els.copyRoom.classList.toggle('hidden', !connected); els.createRoom.classList.toggle('hidden', connected);
+      els.roomCode.textContent = state.room || '—'; els.connectionStatus.textContent = connected ? 'Casal conectado' : 'Aguardando conexão';
+      els.connectionStatus.classList.toggle('connected', connected);
+      els.connectionCopy.textContent = connected ? 'Seu espaço está conectado. Compartilhe este código apenas com seu parceiro.' : 'Crie um código e envie para a pessoa que você quer conectar.';
     }
-  }
-  */
-</script>
+
+    els.createRoom.addEventListener('click', async () => {
+      if (!state.user) return; setBusy(els.createRoom, true);
+      try {
+        const room = await addDoc(collection(db, 'rooms'), { owner: state.user.uid, members: { [state.user.uid]: true }, createdAt: serverTimestamp() });
+        state.room = room.id; await setDoc(doc(db, 'users', state.user.uid), { activeRoom: room.id, email: state.user.email || '' }, { merge: true });
+        updateConnectionUI(); startListeners(); notify('Código criado. Agora envie ao seu parceiro.');
+      } catch (error) { console.error(error); notify('Não foi possível criar o código.'); }
+      finally { setBusy(els.createRoom, false, 'Criar código'); }
+    });
+    els.joinRoom.addEventListener('click', () => { els.codeInput.value = ''; els.codeDialog.showModal(); setTimeout(() => els.codeInput.focus(), 80); });
+    els.codeForm.addEventListener('submit', async (event) => {
+      event.preventDefault(); const code = els.codeInput.value.trim(); if (!code || !state.user) return;
+      setBusy($('confirmCode'), true);
+      try {
+        const ref = doc(db, 'rooms', code); const roomSnap = await getDoc(ref); if (!roomSnap.exists()) throw new Error('not-found');
+        await updateDoc(ref, { [`members.${state.user.uid}`]: true });
+        state.room = code; await setDoc(doc(db, 'users', state.user.uid), { activeRoom: code, email: state.user.email || '' }, { merge: true });
+        els.codeDialog.close(); updateConnectionUI(); startListeners(); notify('Contas conectadas com sucesso.');
+      } catch (error) { console.error(error); notify(error.message === 'not-found' ? 'Código não encontrado.' : 'Não foi possível usar esse código.'); }
+      finally { setBusy($('confirmCode'), false, 'Conectar'); }
+    });
+    els.copyRoom.addEventListener('click', async () => { try { await navigator.clipboard.writeText(state.room); notify('Código copiado.'); } catch { notify('Selecione o código e copie manualmente.'); } });
+
+    document.querySelectorAll('[data-visibility]').forEach(button => button.addEventListener('click', () => {
+      const value = button.dataset.visibility;
+      if (value === 'partner' && !state.room) { notify('Conecte seu parceiro antes de compartilhar.'); return; }
+      els.visibility.value = value; document.querySelectorAll('[data-visibility]').forEach(b => b.classList.toggle('active', b === button));
+      if (value === 'partner' && $('confidential').checked) { $('confidential').checked = false; notify('Itens compartilhados não podem ser confidenciais.'); }
+    }));
+    $('confidential').addEventListener('change', (event) => {
+      if (event.target.checked && els.visibility.value === 'partner') {
+        els.visibility.value = 'private'; document.querySelectorAll('[data-visibility]').forEach(b => b.classList.toggle('active', b.dataset.visibility === 'private'));
+        notify('A anotação voltou para “Só eu”.');
+      }
+    });
+    els.intensity.addEventListener('input', () => els.intensityValue.textContent = els.intensity.value);
+    $('clearBtn').addEventListener('click', resetForm);
+
+    els.form.addEventListener('submit', async (event) => {
+      event.preventDefault(); if (!state.user) return;
+      const visibility = els.visibility.value; if (visibility === 'partner' && !state.room) { notify('Conecte seu parceiro antes de compartilhar.'); return; }
+      const payload = {
+        type: $('type').value, text: $('text').value.trim(), notes: $('notes').value.trim(), when: $('when').value.trim(),
+        intensity: Number(els.intensity.value), visibility, confidential: $('confidential').checked,
+        owner: state.user.uid, roomId: visibility === 'partner' ? state.room : null, updatedAt: serverTimestamp()
+      };
+      setBusy($('saveBtn'), true);
+      try {
+        if (state.editId) await updateDoc(doc(db, 'triggers', state.editId), payload);
+        else await addDoc(collection(db, 'triggers'), { ...payload, createdAt: serverTimestamp() });
+        notify(state.editId ? 'Registro atualizado.' : visibility === 'partner' ? 'Compartilhado com cuidado.' : 'Guardado só para você.'); resetForm();
+      } catch (error) { console.error(error); notify('Não foi possível guardar. Tente novamente.'); }
+      finally { setBusy($('saveBtn'), false, state.editId ? 'Atualizar' : 'Guardar'); }
+    });
+
+    function resetForm() {
+      els.form.reset(); state.editId = null; els.intensity.value = 5; els.intensityValue.textContent = '5'; els.visibility.value = 'private';
+      document.querySelectorAll('[data-visibility]').forEach(b => b.classList.toggle('active', b.dataset.visibility === 'private'));
+      $('saveBtn').textContent = 'Guardar';
+    }
+    function editItem(item) {
+      state.editId = item.id; $('type').value = item.type || 'contexto'; $('text').value = item.text || ''; $('notes').value = item.notes || ''; $('when').value = item.when || '';
+      els.intensity.value = Number(item.intensity) || 5; els.intensityValue.textContent = els.intensity.value; els.visibility.value = item.visibility || 'private'; $('confidential').checked = Boolean(item.confidential);
+      document.querySelectorAll('[data-visibility]').forEach(b => b.classList.toggle('active', b.dataset.visibility === els.visibility.value)); $('saveBtn').textContent = 'Atualizar';
+      document.querySelector('.compose').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    async function removeItem(item) { if (!confirm('Excluir este registro? Essa ação não pode ser desfeita.')) return; try { await deleteDoc(doc(db, 'triggers', item.id)); notify('Registro excluído.'); } catch (error) { console.error(error); notify('Não foi possível excluir.'); } }
+
+    els.listFilter.addEventListener('change', render);
+    function render() {
+      const all = [...state.mine, ...state.partner].sort((a,b) => (b.updatedAt?.seconds || b.createdAt?.seconds || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || 0));
+      const sharedCount = all.filter(x => x.visibility === 'partner').length; const avg = all.length ? (all.reduce((sum,x) => sum + Number(x.intensity || 0), 0) / all.length).toFixed(1) : '—';
+      $('totalMetric').textContent = all.length; $('sharedMetric').textContent = sharedCount; $('averageMetric').textContent = avg;
+      const filter = els.listFilter.value;
+      const visible = all.filter(item => filter === 'all' || (filter === 'mine' && item.source === 'mine') || (filter === 'partner' && item.source === 'partner') || (filter === 'high' && Number(item.intensity) >= 8));
+      els.list.replaceChildren();
+      if (!visible.length) {
+        const empty = document.createElement('div'); empty.className = 'empty'; empty.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5v14"/></svg><strong>Nada por aqui ainda</strong><span>Quando você colocar algo em palavras, ele aparece neste espaço.</span>';
+        els.list.appendChild(empty); return;
+      }
+      visible.forEach(item => els.list.appendChild(createItem(item)));
+    }
+    function createItem(item) {
+      const article = document.createElement('article'); article.className = 'item';
+      const top = document.createElement('div'); top.className = 'item-top';
+      top.innerHTML = '<div class="item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-5l-4 3v-3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z"/></svg></div>';
+      const body = document.createElement('div'); body.className = 'item-body';
+      const heading = document.createElement('div'); heading.className = 'item-title';
+      const textWrap = document.createElement('div'); const title = document.createElement('h4'); title.textContent = item.text || 'Sem título';
+      const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `${item.source === 'mine' ? 'Você' : 'Seu parceiro'} · ${formatDate(item.updatedAt || item.createdAt)}`;
+      textWrap.append(title, meta); const score = document.createElement('div'); score.className = 'intensity'; score.textContent = item.intensity || 5; score.title = 'Intensidade'; heading.append(textWrap, score); body.appendChild(heading);
+      if (item.notes) { const notes = document.createElement('p'); notes.textContent = item.notes; body.appendChild(notes); }
+      if (item.when) { const context = document.createElement('p'); context.className = 'meta'; context.textContent = `Costuma acontecer: ${item.when}`; body.appendChild(context); }
+      const footer = document.createElement('div'); footer.className = 'item-footer'; const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = item.visibility === 'partner' ? 'Nós dois' : item.confidential ? 'Confidencial · só eu' : 'Só eu'; footer.appendChild(tag);
+      if (item.source === 'mine') { const actions = document.createElement('div'); actions.className = 'item-actions'; const edit = document.createElement('button'); edit.className = 'link-btn'; edit.textContent = 'Editar'; edit.onclick = () => editItem(item); const del = document.createElement('button'); del.className = 'link-btn delete'; del.textContent = 'Excluir'; del.onclick = () => removeItem(item); actions.append(edit, del); footer.appendChild(actions); }
+      body.appendChild(footer); top.appendChild(body); article.appendChild(top); return article;
+    }
+
+    $('supportBtn').addEventListener('click', () => els.supportDialog.showModal()); $('closeSupport').addEventListener('click', () => els.supportDialog.close());
+  </script>
 </body>
 </html>
+
